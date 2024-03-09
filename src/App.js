@@ -1,23 +1,69 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from "react";
+import "./App.css";
+import CategoryList from "./CategoryList/categoryList";
+import Header from "./Header/header";
+import axios from "./axios";
+import Loading from "./Loading/loading";
+import FastFoodList from "./FastFoodList/fastFoodList";
+import SearchBar from "./SearchBar/searchBar";
+import notFound from "./assets/images/404.png";
 
 function App() {
+  const [loading, setLoading] = useState(false);
+  const [fastFoodItems, setFastFoodItems] = useState([]);
+
+  const fetchData = async (categoryId = null) => {
+    setLoading(true);
+    const response = await axios.get(
+      `/FastFood/list/${categoryId ? "?categoryId=" + categoryId : ""}`
+    );
+    setLoading(false);
+    setFastFoodItems(response.data);
+  };
+
+  const filterItems = (categoryId) => {
+    fetchData(categoryId);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const searchItems = async (term) => {
+    setLoading(true);
+    const response = await axios.get(
+      `/FastFood/search/${term ? "?term=" + term : ""}`
+    );
+    setLoading(false);
+    setFastFoodItems(response.data);
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return <Loading theme={"dark"} />;
+    }
+
+    if (fastFoodItems.length === 0) {
+      return (
+        <>
+          <div className="alert alert-warning text-center">
+            برای کلید واژه فوق هیچ آیتمییافت نشد
+          </div>
+          <img className="mx-auto mt-5 d-block fade-in-horiz" src={notFound} />
+        </>
+      );
+    }
+
+    return <FastFoodList fastFoodItems={fastFoodItems} />;
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="wrapper bg-faded-dark">
+      <Header />
+      <CategoryList filterItems={filterItems}>
+        <SearchBar searchItems={searchItems} />
+      </CategoryList>
+      <div className="container mt-4">{renderContent()}</div>
     </div>
   );
 }
